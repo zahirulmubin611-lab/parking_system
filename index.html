@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Parkir Pintar</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 450px; }
+        h1 { color: #333; margin-bottom: 5px; font-size: 1.5rem; }
+        
+        /* Bahagian Ringkasan */
+        .main-status { margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 15px; }
+        .count { font-size: 4rem; font-weight: bold; color: #1a73e8; line-height: 1; }
+        #text_v5 { font-weight: bold; margin-top: 10px; display: inline-block; padding: 5px 15px; border-radius: 20px; }
+
+        /* Bahagian Slot Individu */
+        .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .slot-card { padding: 15px; border-radius: 12px; border: 2px solid #eee; transition: 0.3s; }
+        .slot-name { font-size: 0.8rem; font-weight: bold; color: #777; margin-bottom: 10px; }
+        .indicator { width: 20px; height: 20px; border-radius: 50%; margin: 0 auto; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+
+        /* Warna Status */
+        .bg-available { background-color: #e6f4ea; color: #1e8e3e; border-color: #c3e6cb; }
+        .bg-full { background-color: #fce8e6; color: #d93025; border-color: #f5c6cb; }
+        .led-green { background-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        .led-red { background-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; }
+        
+        .footer { font-size: 11px; color: #999; margin-top: 25px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dashboard Parking</h1>
+        <div style="color: #666; font-size: 14px; margin-bottom: 20px;">Pemantauan Real-Time</div>
+
+        <div class="main-status">
+            <div class="count" id="count_v1">--</div>
+            <div style="font-size: 0.9rem; color: #555;">Baki Slot Kosong</div>
+            <div id="text_v5" class="bg-available">Menghubung...</div>
+        </div>
+
+        <div class="slots-grid">
+            <div id="card_v2" class="slot-card">
+                <div class="slot-name">SLOT 1</div>
+                <div id="led_v2" class="indicator"></div>
+                <div id="status_v2" style="font-size: 11px; margin-top: 8px;">--</div>
+            </div>
+            <div id="card_v3" class="slot-card">
+                <div class="slot-name">SLOT 2</div>
+                <div id="led_v3" class="indicator"></div>
+                <div id="status_v3" style="font-size: 11px; margin-top: 8px;">--</div>
+            </div>
+            <div id="card_v4" class="slot-card">
+                <div class="slot-name">SLOT 3</div>
+                <div id="led_v4" class="indicator"></div>
+                <div id="status_v4" style="font-size: 11px; margin-top: 8px;">--</div>
+            </div>
+        </div>
+
+        <div class="footer">Kemaskini setiap 3 saat • Sistem ESP32</div>
+    </div>
+
+    <script>
+        const token = "W3glcLK5kCnTrtSj_XNpeGZ8HfH0pDqR";
+        const baseUrl = `https://blynk.cloud/external/api/get?token=${token}`;
+
+        async function updateDashboard() {
+            try {
+                // Ambil data V1 (Baki) & V5 (Teks)
+                const valV1 = await (await fetch(`${baseUrl}&V1`)).text();
+                const valV5 = await (await fetch(`${baseUrl}&V5`)).text();
+                
+                document.getElementById('count_v1').innerText = valV1;
+                document.getElementById('text_v5').innerText = valV5;
+                document.getElementById('text_v5').className = (valV1 == "0") ? "bg-full" : "bg-available";
+
+                // Fungsi untuk update kotak slot individu
+                updateSlotUI("V2", "card_v2", "led_v2", "status_v2");
+                updateSlotUI("V3", "card_v3", "led_v3", "status_v3");
+                updateSlotUI("V4", "card_v4", "led_v4", "status_v4");
+
+            } catch (e) { console.log("Ralat API"); }
+        }
+
+        async function updateSlotUI(pin, cardId, ledId, statusId) {
+            const val = await (await fetch(`${baseUrl}&${pin}`)).text();
+            const isFull = (val === "PENUH");
+            
+            document.getElementById(cardId).className = isFull ? "slot-card bg-full" : "slot-card bg-available";
+            document.getElementById(ledId).className = isFull ? "indicator led-red" : "indicator led-green";
+            document.getElementById(statusId).innerText = val;
+        }
+
+        setInterval(updateDashboard, 3000);
+        updateDashboard();
+    </script>
+</body>
+</html>
